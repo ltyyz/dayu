@@ -7,15 +7,23 @@ import (
 )
 
 const (
-	ServerPort        = ":8000"
-	ResultCodeSuccess = "0"
-	ResultCodeFail    = "9"
+	ServerPort             = ":8000"
+	ResultCodeSuccess      = "0"
+	ResultCodeFail         = "9"
+	ResultCodeLoginFail    = "1"
+	ResultCodeNeedLogin    = "2"
+	ResultCodeNoPermission = "3"
+	ResultCodeNotFound     = "4"
 )
 
 type Result struct {
 	Code string      `json:"code"`
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
+}
+
+func (r Result) responseJSON(context *gin.Context) {
+	context.JSON(http.StatusOK, r)
 }
 
 func ResultSuccess(data interface{}) *Result {
@@ -26,6 +34,10 @@ func ResultFail(msg string) *Result {
 	return &Result{Code: ResultCodeFail, Msg: msg, Data: nil}
 }
 
+func ResultFailWithCode(code string, msg string) *Result {
+	return &Result{Code: code, Msg: msg, Data: nil}
+}
+
 func StartServer() {
 	router := gin.Default()
 
@@ -33,14 +45,13 @@ func StartServer() {
 
 	RouteKu(router)
 
-	err := router.Run(ServerPort)
-	if err != nil {
+	if err := router.Run(ServerPort); err != nil {
 		log.Fatalln(err)
 	}
 }
 
 func Pong(context *gin.Context) {
-	context.JSON(http.StatusOK, ResultSuccess("pong"))
+	ResultSuccess("pong").responseJSON(context)
 }
 
 func main() {
