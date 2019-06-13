@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 const (
@@ -27,6 +28,12 @@ type User struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
 	Status   string `gorm:"default:1" json:"status"`
+}
+
+type Token struct {
+	ParentModel
+	UserId    string    `json:"userId"`
+	ExpiredAt time.Time `json:"expiredAt"`
 }
 
 func KuTest(context *gin.Context) {
@@ -84,7 +91,11 @@ func KuUserLogin(context *gin.Context) {
 	} else {
 		password = Md5(password + PasswordKey)
 		if password == user.Password {
-			ResultSuccess("").responseJSON(context)
+			token := Token{UserId: user.Id, ExpiredAt: time.Now()}
+			token.Id = UUID()
+			db.Create(token)
+
+			ResultSuccess(token).responseJSON(context)
 
 		} else {
 			ResultFailWithCode(ResultCodeLoginFail, "").responseJSON(context)
